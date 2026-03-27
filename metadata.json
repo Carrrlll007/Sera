@@ -1,0 +1,9 @@
+{
+  "name": "Operator",
+  "description": "Your trusted AI life-admin agent. We handle the annoying parts of life—appointments, paperwork, and follow-up—so you don't have to.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "Household": {
+      "title": "Household",
+      "description": "A group of users sharing life admin tasks.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the household." },
+        "members": { "type": "array", "items": { "type": "string" }, "description": "List of user UIDs in the household." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "members"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A life admin task to be executed or tracked.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed", "exception"] },
+        "type": { "type": "string", "enum": ["appointment", "document", "case", "other"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "householdId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "metadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "status", "type", "householdId", "authorId"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "A stored document related to life admin.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "url": { "type": "string" },
+        "householdId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "metadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "url", "householdId", "authorId"]
+    },
+    "Provider": {
+      "title": "Provider",
+      "description": "A service provider (doctor, school, utility).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "contactInfo": { "type": "object" },
+        "householdId": { "type": "string" }
+      },
+      "required": ["name", "householdId"]
+    }
+  },
+  "firestore": {
+    "/households/{householdId}": {
+      "schema": "Household",
+      "description": "Household data."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Life admin tasks."
+    },
+    "/documents/{documentId}": {
+      "schema": "Document",
+      "description": "Stored documents."
+    },
+    "/providers/{providerId}": {
+      "schema": "Provider",
+      "description": "Service providers."
+    }
+  }
+}
