@@ -1,6 +1,6 @@
 {
-  "name": "Operator",
-  "description": "Your trusted AI life-admin agent. We handle the annoying parts of life—appointments, paperwork, and follow-up—so you don't have to.",
+  "name": "Sera",
+  "description": "A calm AI life-admin assistant for individuals and families. Sera helps life feel handled by managing appointments, documents, and complex cases with ease.",
   "requestFramePermissions": [
     "camera",
     "microphone",

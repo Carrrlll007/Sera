@@ -1,20 +1,39 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Sera | Life Handled
 
-# Run and deploy your AI Studio app
+Sera is a calm AI life-admin assistant that helps individuals and families manage the messy administrative burden of everyday life.
 
-This contains everything you need to run your app locally.
+## The Problem
+Life admin is universal, fragmented, and emotionally draining. From healthcare appointments and school forms to insurance claims and utility disputes, the cognitive load of managing a household is a major source of stress.
 
-View your app in AI Studio: https://ai.studio/apps/ef8d2c22-4f32-42cb-8d34-636c74e158e6
+## The Solution
+Sera acts as a personal operating layer between you and these messy systems. It doesn't just remind you; it organizes, executes, and resolves tasks.
 
-## Run Locally
+## Key Features
+- **Ask Sera**: A natural language command center that understands your life context and takes real action.
+- **Intelligent Documents**: Upload any letter or form; Sera extracts the deadlines, providers, and next steps.
+- **Case Management**: Track multi-step processes like reimbursements or applications from start to finish.
+- **Family Coordination**: A shared workspace for households to delegate responsibilities and stay in sync.
+- **Proactive Guidance**: Sera nudges you when something has been waiting too long or needs preparation.
 
-**Prerequisites:**  Node.js
+## Architecture
+- **Frontend**: React 19 + Vite + Tailwind CSS
+- **Backend**: Express + Vite Middleware
+- **AI**: Google Gemini (Intent parsing, Document extraction)
+- **Database**: Firebase Firestore (Real-time sync, secure rules)
+- **Auth**: Firebase Authentication (Google Login)
 
+## Setup
+1. Clone the repository.
+2. Install dependencies: `npm install`
+3. Configure Firebase in `firebase-applet-config.json`.
+4. Set `GEMINI_API_KEY` in your environment.
+5. Start development server: `npm run dev`
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Roadmap
+- [ ] Deep integration with email and calendars.
+- [ ] Human-in-the-loop escalation for complex calls/forms.
+- [ ] Advanced marketplace for vetted local support.
+- [ ] B2B distribution for employee caregiver benefits.
+
+---
+*Sera helps life feel handled.*
