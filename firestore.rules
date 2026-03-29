@@ -8,12 +8,24 @@ service cloud.firestore {
     
     function isMemberOfHousehold(householdId) {
       return isAuthenticated() && 
+        householdId != null &&
+        exists(/databases/$(database)/documents/households/$(householdId)) &&
         get(/databases/$(database)/documents/households/$(householdId)).data.members.hasAny([request.auth.uid]);
+    }
+
+    function isOwner(authorId) {
+      return isAuthenticated() && request.auth.uid == authorId;
     }
 
     function isAdmin() {
       return isAuthenticated() && 
-        (request.auth.token.email == "cgdortenzi@gmail.com" && request.auth.token.email_verified == true);
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         (request.auth.token.email == "cgdortenzi@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    match /{path=**}/timeline/{eventId} {
+      allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
     }
 
     // Households
@@ -21,30 +33,58 @@ service cloud.firestore {
       allow read: if isMemberOfHousehold(householdId) || isAdmin();
       allow create: if isAuthenticated();
       allow update: if isMemberOfHousehold(householdId) || isAdmin();
+
+      match /members/{memberId} {
+        allow read: if isMemberOfHousehold(householdId) || isAdmin();
+        allow create: if isMemberOfHousehold(householdId) || isAdmin();
+        allow update: if isMemberOfHousehold(householdId) || isAdmin();
+        allow delete: if isMemberOfHousehold(householdId) || isAdmin();
+      }
+    }
+
+    // Reminders
+    match /reminders/{reminderId} {
+      allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
+      allow update: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow delete: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
     }
 
     // Tasks
     match /tasks/{taskId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
-      allow delete: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow update: if (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId))) || isAdmin();
+      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+    }
+
+    // Cases
+    match /cases/{caseId} {
+      allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
+      allow update: if (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId))) || isAdmin();
+      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      
+      match /timeline/{eventId} {
+        allow read: if isMemberOfHousehold(get(/databases/$(database)/documents/cases/$(caseId)).data.householdId) || isAdmin();
+        allow create: if isAuthenticated() && isMemberOfHousehold(get(/databases/$(database)/documents/cases/$(caseId)).data.householdId);
+      }
     }
 
     // Documents
     match /documents/{documentId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
-      allow delete: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow update: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
     }
 
-    // Providers
-    match /providers/{providerId} {
+    // Appointments
+    match /appointments/{appointmentId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
-      allow delete: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow update: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
     }
   }
 }

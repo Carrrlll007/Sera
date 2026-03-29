@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../providers/AuthProvider";
-import { caseService } from "../services/caseService";
-import { Case, CaseStatus } from "../types";
+import { useCases } from "../hooks/useCases";
+import { useRecommendations } from "../hooks/useRecommendations";
+import { Case, CaseStatus, TimelineEvent, Recommendation } from "../types";
+import { RecommendationCard } from "../components/RecommendationCard";
 import { 
   Briefcase, 
   Plus, 
@@ -12,30 +13,66 @@ import {
   AlertCircle,
   FileText,
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  Shield,
+  Send,
+  User,
+  Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { cn } from "../utils/cn";
+import { VALID_CASE_TRANSITIONS } from "../constants/caseTransitions";
+
+import { CaseModal } from "../components/CaseModal";
 
 export const CasesPage: React.FC = () => {
-  const { household } = useAuth();
-  const [cases, setCases] = useState<Case[]>([]);
+  const { cases, subscribeToCaseTimeline, updateCaseStatus, addCaseNote } = useCases();
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const { recommendations: caseRecommendations } = useRecommendations(
+    selectedCase ? { entityId: selectedCase.id, entityType: "case" } : undefined
+  );
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
   useEffect(() => {
-    if (!household) return;
-    return caseService.subscribeToHouseholdCases(household.id, setCases);
-  }, [household]);
+    if (!selectedCase?.id) {
+      setTimeline([]);
+      return;
+    }
+    return subscribeToCaseTimeline(selectedCase.id, setTimeline);
+  }, [selectedCase?.id, subscribeToCaseTimeline]);
+
+  // Keep selected case in sync with the list
+  useEffect(() => {
+    if (selectedCase) {
+      const updated = cases.find(c => c.id === selectedCase.id);
+      if (updated) setSelectedCase(updated);
+    }
+  }, [cases, selectedCase?.id]);
+
+  const handleAddNote = async () => {
+    if (!selectedCase || !note.trim() || isSubmittingNote) return;
+    setIsSubmittingNote(true);
+    try {
+      await addCaseNote(selectedCase.id, note);
+      setNote("");
+    } finally {
+      setIsSubmittingNote(false);
+    }
+  };
 
   const statusMap: Record<CaseStatus, { label: string, color: string, icon: any }> = {
-    "new": { label: "New", color: "bg-blue-50 text-blue-600", icon: <Sparkles size={14} /> },
-    "in-progress": { label: "In Progress", color: "bg-zinc-100 text-zinc-600", icon: <Clock size={14} /> },
+    "new": { label: "New", color: "bg-blue-50 text-blue-600", icon: <Zap size={14} /> },
+    "active": { label: "Active", color: "bg-zinc-100 text-zinc-600", icon: <Clock size={14} /> },
     "waiting-on-document": { label: "Waiting on Document", color: "bg-amber-50 text-amber-600", icon: <FileText size={14} /> },
     "waiting-on-response": { label: "Waiting on Response", color: "bg-amber-50 text-amber-600", icon: <MessageSquare size={14} /> },
     "ready-to-submit": { label: "Ready to Submit", color: "bg-green-50 text-green-600", icon: <CheckCircle2 size={14} /> },
     "submitted": { label: "Submitted", color: "bg-green-100 text-green-700", icon: <CheckCircle2 size={14} /> },
     "resolved": { label: "Resolved", color: "bg-zinc-900 text-white", icon: <CheckCircle2 size={14} /> },
-    "escalated": { label: "Escalated", color: "bg-red-50 text-red-600", icon: <AlertCircle size={14} /> }
+    "archived": { label: "Archived", color: "bg-zinc-100 text-zinc-400", icon: <Shield size={14} /> }
   };
 
   return (
@@ -45,11 +82,16 @@ export const CasesPage: React.FC = () => {
           <h1 className="text-3xl font-display font-bold text-zinc-900 mb-2">Cases</h1>
           <p className="text-zinc-500">Manage multi-step life situations like claims and applications.</p>
         </div>
-        <button className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
+        >
           <Plus size={20} />
           New Case
         </button>
       </div>
+
+      <CaseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Case List */}
@@ -70,7 +112,7 @@ export const CasesPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-zinc-900 mb-2">No active cases</h3>
               <p className="text-zinc-500 max-w-xs mx-auto">
-                Sera helps you track complex processes like insurance claims, refunds, or school applications.
+                Sera helps you manage multi-step life situations like insurance claims, medical follow-ups, or school applications. Start a case to offload the complexity.
               </p>
             </div>
           ) : (
@@ -97,7 +139,7 @@ export const CasesPage: React.FC = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm sticky top-28"
+                className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm sticky top-28 max-h-[calc(100vh-120px)] overflow-y-auto"
               >
                 <div className="flex items-center justify-between mb-8">
                   <div className={cn("px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5", statusMap[selectedCase.status].color)}>
@@ -111,43 +153,91 @@ export const CasesPage: React.FC = () => {
                 <p className="text-sm text-zinc-500 mb-8">{selectedCase.description}</p>
 
                 <div className="space-y-8">
+                  {/* Status Transitions */}
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Update Status</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {VALID_CASE_TRANSITIONS[selectedCase.status].map((nextStatus) => (
+                        <button
+                          key={nextStatus}
+                          onClick={() => updateCaseStatus(selectedCase.id, nextStatus)}
+                          className={cn(
+                            "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border",
+                            statusMap[nextStatus].color,
+                            "border-transparent hover:border-zinc-900"
+                          )}
+                        >
+                          {statusMap[nextStatus].label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Next Action / Recommendations */}
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Sera's Intelligence</h4>
+                    {caseRecommendations.length === 0 ? (
+                      <div className="p-6 bg-zinc-50 border border-dashed border-zinc-200 rounded-[2rem] text-center">
+                        <p className="text-xs text-zinc-400">No specific recommendations for this case.</p>
+                      </div>
+                    ) : (
+                      caseRecommendations.map((rec) => (
+                        <RecommendationCard 
+                          key={rec.id}
+                          recommendation={rec as Recommendation}
+                        />
+                      ))
+                    )}
+                  </div>
+
+                  {/* Communication Log / Notes */}
+                  <div>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Notes & Log</h4>
+                    <div className="flex gap-2 mb-4">
+                      <input 
+                        type="text" 
+                        placeholder="Add a note..." 
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                        className="flex-1 bg-zinc-50 border-none rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-zinc-900/5"
+                      />
+                      <button 
+                        onClick={handleAddNote}
+                        disabled={!note.trim() || isSubmittingNote}
+                        className="p-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Timeline */}
                   <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Case Timeline</h4>
                     <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-zinc-100">
-                      <TimelineStep 
-                        active
-                        title="Waiting on document"
-                        description="Sera detected a missing medical referral for this claim."
-                        time="2 days ago"
-                      />
-                      <TimelineStep 
-                        title="Case created"
-                        description="Initial claim details extracted from uploaded bill."
-                        time="5 days ago"
-                      />
+                      {timeline.length === 0 ? (
+                        <p className="text-xs text-zinc-400 italic pl-6">No events recorded yet.</p>
+                      ) : (
+                        timeline.map((event, idx) => (
+                          <TimelineStep 
+                            key={event.id || idx}
+                            active={idx === 0}
+                            title={event.type.replace(/_/g, ' ')}
+                            description={event.description}
+                            author={event.authorName}
+                            time={event.createdAt ? format(event.createdAt.toDate(), 'MMM d, h:mm a') : 'Just now'}
+                          />
+                        ))
+                      )}
                     </div>
-                  </div>
-
-                  {/* Next Action */}
-                  <div className="p-6 bg-zinc-900 text-white rounded-[2rem] shadow-xl shadow-zinc-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles size={16} className="text-zinc-400" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Sera's Recommendation</span>
-                    </div>
-                    <p className="text-sm font-medium mb-6 leading-relaxed">
-                      This case has been waiting 10 days. Would you like me to send a follow-up email to the provider?
-                    </p>
-                    <button className="w-full bg-white text-zinc-900 py-3 rounded-xl font-bold text-xs hover:bg-zinc-100 transition-all flex items-center justify-center gap-2">
-                      Send Follow-up <ArrowRight size={14} />
-                    </button>
                   </div>
                 </div>
               </motion.div>
             ) : (
               <div className="bg-zinc-50/50 border border-dashed border-zinc-200 rounded-[2.5rem] p-12 text-center h-[400px] flex flex-col items-center justify-center">
                 <Briefcase className="text-zinc-300 mb-4" size={32} />
-                <p className="text-sm text-zinc-400 font-medium">Select a case to view its timeline and next actions.</p>
+                <p className="text-sm text-zinc-400 font-medium">Select a case to view its progress, intelligence, and next actions.</p>
               </div>
             )}
           </AnimatePresence>
@@ -186,15 +276,22 @@ const CaseRow = ({ caseData, statusInfo, active, onClick }: any) => (
   </button>
 );
 
-const TimelineStep = ({ active, title, description, time }: any) => (
+const TimelineStep = ({ active, title, description, author, time }: any) => (
   <div className="relative pl-6">
     <div className={cn(
       "absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full border-2 bg-white",
       active ? "border-zinc-900" : "border-zinc-200"
     )} />
-    <h5 className={cn("text-sm font-bold mb-0.5", active ? "text-zinc-900" : "text-zinc-400")}>{title}</h5>
-    <p className="text-xs text-zinc-500 mb-1">{description}</p>
-    <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">{time}</p>
+    <div className="flex items-center justify-between gap-2 mb-0.5">
+      <h5 className={cn("text-[10px] font-bold uppercase tracking-widest", active ? "text-zinc-900" : "text-zinc-400")}>{title}</h5>
+      <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">{time}</span>
+    </div>
+    <p className="text-xs text-zinc-500 mb-1 leading-relaxed">{description}</p>
+    {author && (
+      <div className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+        <User size={10} /> {author}
+      </div>
+    )}
   </div>
 );
 
@@ -216,8 +313,4 @@ const Sparkles = ({ size, className }: any) => (
   </svg>
 );
 
-function cn(...inputs: any[]) {
-  const { clsx } = require("clsx");
-  const { twMerge } = require("tailwind-merge");
-  return twMerge(clsx(inputs));
-}
+// Removed local cn function as it's now imported from ../lib/utils

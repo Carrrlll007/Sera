@@ -1,6 +1,6 @@
 import React from "react";
-import { useAuth } from "../providers/AuthProvider";
-import { signIn } from "../firebase";
+import { useAuth } from "../app/providers/AuthProvider";
+import { signIn } from "../services/firebase";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 
 export const AuthPage: React.FC = () => {

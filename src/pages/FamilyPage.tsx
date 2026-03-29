@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../providers/AuthProvider";
-import { householdService } from "../services/householdService";
-import { HouseholdMember } from "../types";
+import { useHousehold } from "../hooks/useHousehold";
+import { taskService } from "../services/taskService";
+import { timelineService } from "../services/timelineService";
+import { Task, TimelineEvent, MemberRole } from "../types";
+import { formatDistanceToNow } from "date-fns";
 import { 
   Users, 
   UserPlus, 
@@ -13,18 +15,61 @@ import {
   Heart,
   Baby,
   User,
-  Clock
+  Clock,
+  FileText,
+  Activity,
+  Plus,
+  Trash2
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "../utils/cn";
+import { MemberModal } from "../components/MemberModal";
+import { getRoleLabel, canManageMembers } from "../utils/permissions";
 
 export const FamilyPage: React.FC = () => {
-  const { household, user } = useAuth();
-  const [members, setMembers] = useState<HouseholdMember[]>([]);
+  const { 
+    household, 
+    members, 
+    currentMember, 
+    userRole, 
+    isLoading, 
+    addMember, 
+    updateMemberRole, 
+    removeMember 
+  } = useHousehold();
+  
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!household) return;
-    return householdService.subscribeToHouseholdMembers(household.id, setMembers);
+    
+    const unsubTasks = taskService.subscribeToHouseholdTasks(household.id, setTasks);
+    const unsubTimeline = timelineService.subscribeToHouseholdTimeline(household.id, (events) => {
+      setTimeline(events.slice(0, 5));
+    });
+
+    return () => {
+      unsubTasks();
+      unsubTimeline();
+    };
   }, [household]);
+
+  const getTaskCountForMember = (memberUid: string) => {
+    return tasks.filter(t => (t.authorId === memberUid || t.assigneeId === memberUid) && t.status === 'pending').length;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-[calc(100vh-160px)] flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center animate-pulse">
+          <Users className="text-white" size={24} />
+        </div>
+        <p className="text-zinc-500 font-medium animate-pulse">Sera is gathering your household...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -33,30 +78,54 @@ export const FamilyPage: React.FC = () => {
           <h1 className="text-3xl font-display font-bold text-zinc-900 mb-2">Family</h1>
           <p className="text-zinc-500">Shared household coordination and member management.</p>
         </div>
-        <button className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200">
-          <UserPlus size={20} />
-          Invite Member
-        </button>
+        {canManageMembers(userRole) && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
+          >
+            <UserPlus size={20} />
+            Invite Member
+          </button>
+        )}
       </div>
+
+      <MemberModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAdd={addMember}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Member List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {members.map((member) => (
-              <MemberCard key={member.id} member={member} isMe={member.uid === user?.uid} />
+              <MemberCard 
+                key={member.id} 
+                member={member} 
+                isMe={member.uid === currentMember?.uid} 
+                taskCount={getTaskCountForMember(member.uid)}
+                canManage={canManageMembers(userRole)}
+                onUpdateRole={(role: MemberRole) => updateMemberRole(member.id, role)}
+                onRemove={() => removeMember(member.id, member.uid)}
+              />
             ))}
             
             {/* Placeholder for inviting new members */}
-            <button className="border-2 border-dashed border-zinc-100 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 hover:border-zinc-200 hover:bg-zinc-50 transition-all group">
-              <div className="w-12 h-12 bg-white border border-zinc-100 rounded-2xl flex items-center justify-center text-zinc-300 group-hover:text-zinc-900 transition-colors">
-                <UserPlus size={24} />
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-zinc-900">Add a member</p>
-                <p className="text-xs text-zinc-400">Partner, child, or caregiver</p>
-              </div>
-            </button>
+            {canManageMembers(userRole) && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="border-2 border-dashed border-zinc-100 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 hover:border-zinc-200 hover:bg-zinc-50 transition-all group"
+              >
+                <div className="w-12 h-12 bg-white border border-zinc-100 rounded-2xl flex items-center justify-center text-zinc-300 group-hover:text-zinc-900 transition-colors">
+                  <UserPlus size={24} />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-zinc-900">Add a family member</p>
+                  <p className="text-xs text-zinc-400">Partner, child, or caregiver</p>
+                </div>
+              </button>
+            )}
           </div>
 
           <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm">
@@ -97,16 +166,18 @@ export const FamilyPage: React.FC = () => {
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-4">Recent Activity</h4>
                 <div className="space-y-4">
-                  <ActivityItem 
-                    icon={<Heart size={12} />} 
-                    text="Partner added a medical case" 
-                    time="2h ago" 
-                  />
-                  <ActivityItem 
-                    icon={<Baby size={12} />} 
-                    text="Sera updated school schedule" 
-                    time="5h ago" 
-                  />
+                  {timeline.length === 0 ? (
+                    <p className="text-xs text-zinc-500 italic">Your household is currently in a state of calm. No recent activity.</p>
+                  ) : (
+                    timeline.map((event) => (
+                      <ActivityItem 
+                        key={event.id}
+                        icon={event.type === 'created' ? <Plus size={12} /> : event.type === 'status_change' ? <Activity size={12} /> : <FileText size={12} />} 
+                        text={event.description} 
+                        time={event.createdAt ? formatDistanceToNow(event.createdAt.toDate(), { addSuffix: true }) : 'Just now'} 
+                      />
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -123,34 +194,91 @@ export const FamilyPage: React.FC = () => {
   );
 };
 
-const MemberCard = ({ member, isMe }: any) => (
-  <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm hover:border-zinc-300 transition-all group relative">
-    <button className="absolute top-6 right-6 p-1 text-zinc-300 hover:text-zinc-900 transition-colors opacity-0 group-hover:opacity-100">
-      <MoreVertical size={18} />
-    </button>
-    
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-14 h-14 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition-colors">
-        <User size={28} />
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <h4 className="font-bold text-zinc-900">{member.name || "Family Member"}</h4>
-          {isMe && <span className="px-2 py-0.5 bg-zinc-900 text-white text-[8px] font-bold uppercase tracking-widest rounded-full">You</span>}
-        </div>
-        <p className="text-xs text-zinc-400 font-medium capitalize">{member.role}</p>
-      </div>
-    </div>
+const MemberCard = ({ member, isMe, taskCount, canManage, onUpdateRole, onRemove }: any) => {
+  const [showOptions, setShowOptions] = useState(false);
 
-    <div className="flex items-center justify-between pt-6 border-t border-zinc-50">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-        <Clock size={12} />
-        3 Active Tasks
+  return (
+    <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm hover:border-zinc-300 transition-all group relative">
+      {canManage && !isMe && (
+        <div className="absolute top-6 right-6">
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="p-1 text-zinc-300 hover:text-zinc-900 transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <MoreVertical size={18} />
+          </button>
+          
+          <AnimatePresence>
+            {showOptions && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute right-0 mt-2 w-48 bg-white border border-zinc-100 rounded-2xl shadow-xl z-10 overflow-hidden"
+              >
+                <div className="p-2 space-y-1">
+                  <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Change Role</p>
+                  {(['admin', 'member', 'child', 'caregiver'] as MemberRole[]).map(role => (
+                    <button
+                      key={role}
+                      onClick={() => {
+                        onUpdateRole(role);
+                        setShowOptions(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-xs font-medium rounded-xl transition-colors",
+                        member.role === role ? "bg-zinc-900 text-white" : "hover:bg-zinc-50 text-zinc-600"
+                      )}
+                    >
+                      {getRoleLabel(role)}
+                    </button>
+                  ))}
+                  <div className="border-t border-zinc-50 mt-1 pt-1">
+                    <button
+                      onClick={() => {
+                        onRemove();
+                        setShowOptions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2"
+                    >
+                      <Trash2 size={14} />
+                      Remove Member
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+      
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-14 h-14 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-zinc-100 transition-colors">
+          {member.photoURL ? (
+            <img src={member.photoURL} alt={member.displayName} className="w-full h-full object-cover rounded-2xl" referrerPolicy="no-referrer" />
+          ) : (
+            <User size={28} />
+          )}
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-zinc-900">{member.displayName || "Family Member"}</h4>
+            {isMe && <span className="px-2 py-0.5 bg-zinc-900 text-white text-[8px] font-bold uppercase tracking-widest rounded-full">You</span>}
+          </div>
+          <p className="text-xs text-zinc-400 font-medium capitalize">{getRoleLabel(member.role)}</p>
+        </div>
       </div>
-      <ChevronRight size={16} className="text-zinc-200 group-hover:text-zinc-900 transition-colors" />
+
+      <div className="flex items-center justify-between pt-6 border-t border-zinc-50">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+          <Clock size={12} />
+          {taskCount} Active Tasks
+        </div>
+        <ChevronRight size={16} className="text-zinc-200 group-hover:text-zinc-900 transition-colors" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SettingsItem = ({ icon, title, description }: any) => (
   <button className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all text-left group">
@@ -175,8 +303,4 @@ const ActivityItem = ({ icon, text, time }: any) => (
   </div>
 );
 
-function cn(...inputs: any[]) {
-  const { clsx } = require("clsx");
-  const { twMerge } = require("tailwind-merge");
-  return twMerge(clsx(inputs));
-}
+// Removed local cn function as it's now imported from ../lib/utils

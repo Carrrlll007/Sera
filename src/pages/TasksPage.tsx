@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../providers/AuthProvider";
-import { taskService } from "../services/taskService";
+import { useTasks } from "../hooks/useTasks";
 import { Task, TaskStatus, Priority } from "../types";
 import { 
   CheckCircle2, 
@@ -17,21 +16,21 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { toDate } from "../utils/dateUtils";
+
+import { cn } from "../utils/cn";
+
+import { TaskModal } from "../components/TaskModal";
 
 export const TasksPage: React.FC = () => {
-  const { household, user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, updateTask } = useTasks();
   const [filter, setFilter] = useState<TaskStatus | 'all'>('all');
-
-  useEffect(() => {
-    if (!household) return;
-    return taskService.subscribeToHouseholdTasks(household.id, setTasks);
-  }, [household]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredTasks = tasks.filter(t => filter === 'all' || t.status === filter);
 
   const toggleTask = async (task: Task) => {
-    await taskService.updateTask(task.id!, { 
+    await updateTask(task.id!, { 
       status: task.status === 'completed' ? 'pending' : 'completed' 
     });
   };
@@ -50,11 +49,16 @@ export const TasksPage: React.FC = () => {
           <h1 className="text-3xl font-display font-bold text-zinc-900 mb-2">Tasks</h1>
           <p className="text-zinc-500">Your structured view of active responsibilities.</p>
         </div>
-        <button className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
+        >
           <Plus size={20} />
           Add Task
         </button>
       </div>
+
+      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-2 rounded-[2rem] border border-zinc-100 shadow-sm">
         <div className="flex items-center gap-1 p-1 bg-zinc-50 rounded-2xl w-full md:w-auto">
@@ -78,9 +82,9 @@ export const TasksPage: React.FC = () => {
             <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="text-zinc-300" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-zinc-900 mb-2">All caught up</h3>
+            <h3 className="text-xl font-bold text-zinc-900 mb-2">Your list is clear</h3>
             <p className="text-zinc-500 max-w-xs mx-auto">
-              You have no {filter !== 'all' ? filter : ''} tasks at the moment. Enjoy the calm.
+              Use this space to offload mental overhead and track what needs to be done. Tasks help you break down complex life-admin into manageable steps.
             </p>
           </div>
         ) : (
@@ -104,7 +108,7 @@ export const TasksPage: React.FC = () => {
 
 const TaskCard = ({ task, onToggle, priorityColor }: any) => {
   const isDone = task.status === 'completed';
-  const dueDate = task.dueDate?.toDate();
+  const dueDate = toDate(task.dueDate);
 
   return (
     <motion.div
@@ -175,9 +179,3 @@ const FilterButton = ({ active, onClick, label }: any) => (
     {label}
   </button>
 );
-
-function cn(...inputs: any[]) {
-  const { clsx } = require("clsx");
-  const { twMerge } = require("tailwind-merge");
-  return twMerge(clsx(inputs));
-}

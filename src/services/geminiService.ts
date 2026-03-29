@@ -39,6 +39,48 @@ export async function parseUserIntent(message: string) {
   return JSON.parse(response.text);
 }
 
+export async function generateLifeAdminPlan(prompt: string): Promise<{ entities: any[], summary: string }> {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: `You are Sera, a life-admin operating system. Analyze the user's request and generate a structured plan of actions.
+    
+    User Request: "${prompt}"
+    
+    Rules:
+    - If it's a multi-step process (reimbursement, application, move), create a "case".
+    - If it's a specific time-bound event, create an "appointment".
+    - Otherwise, create "tasks".
+    - Return a JSON object matching the schema.`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          entities: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, enum: ["task", "case", "appointment"] },
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                priority: { type: Type.STRING, enum: ["low", "medium", "high", "urgent"] },
+                dueDateOffsetDays: { type: Type.NUMBER },
+                category: { type: Type.STRING }
+              },
+              required: ["type", "title", "description", "priority"]
+            }
+          },
+          summary: { type: Type.STRING }
+        },
+        required: ["entities", "summary"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text);
+}
+
 export async function extractDocumentData(base64Data: string, mimeType: string) {
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
