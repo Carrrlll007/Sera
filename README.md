@@ -51,12 +51,17 @@ Sera is built as a modern, full-stack application designed for real-time coordin
    ```bash
    cp .env.example .env
    ```
-   Open `.env` and add your `GEMINI_API_KEY`.
+   Open `.env` and add your `GEMINI_API_KEY` plus the Firebase web app values used by the client:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_FIREBASE_MEASUREMENT_ID`
+   - `VITE_FIREBASE_FIRESTORE_DATABASE_ID` only if you are not using the default Firestore database
 
-3. **Firebase setup**:
-   Create `firebase-config.json` based on `firebase-config.example.json` and populate it with your project credentials.
-
-4. **Start development server**:
+3. **Start development server**:
    ```bash
    npm run dev
    ```
@@ -69,12 +74,16 @@ To run the test suite:
 npm run test
 ```
 
+TypeScript checks:
+```bash
+npm run typecheck
+```
+
 ## Repository Structure
 
 - `src/`: Core application source code (React + TypeScript).
 - `public/`: Static assets (favicon, etc.).
 - `tools/platform/`: Platform-specific artifacts (blueprints, metadata).
-- `firebase-config.json`: Firebase project configuration.
 - `firestore.rules`: Security rules for the Firestore database.
 - `server.ts`: Express server entry point.
 - `.env.example`: Template for environment variables.
@@ -82,7 +91,14 @@ npm run test
 ## Environment Variables
 
 - `GEMINI_API_KEY` (Required): Your Google Gemini API key, used for intent parsing and document intelligence.
-- `APP_URL` (Optional): The base URL of the application, used for absolute links and OAuth callbacks.
+- `VITE_FIREBASE_API_KEY` (Required): Firebase web API key.
+- `VITE_FIREBASE_AUTH_DOMAIN` (Required): Firebase Auth domain.
+- `VITE_FIREBASE_PROJECT_ID` (Required): Firebase project ID.
+- `VITE_FIREBASE_STORAGE_BUCKET` (Required): Firebase Storage bucket.
+- `VITE_FIREBASE_MESSAGING_SENDER_ID` (Required): Firebase messaging sender ID.
+- `VITE_FIREBASE_APP_ID` (Required): Firebase app ID.
+- `VITE_FIREBASE_MEASUREMENT_ID` (Required): Firebase measurement ID.
+- `VITE_FIREBASE_FIRESTORE_DATABASE_ID` (Optional): Firestore database ID when not using the default database.
 
 ## Roadmap
 - [ ] **Deep Integrations**: Direct sync with Gmail and Google Calendar to capture admin at the source.

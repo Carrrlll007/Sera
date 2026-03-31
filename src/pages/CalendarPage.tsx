@@ -14,7 +14,6 @@ import {
   Circle,
   AlertCircle,
   Sparkles,
-  ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -235,11 +234,6 @@ export const CalendarPage: React.FC = () => {
                             <p className="text-xs font-medium text-zinc-300 leading-relaxed">
                               {app.metadata.nextRecommendedAction}
                             </p>
-                            {app.state === 'completed' && !app.metadata.followUpTaskId && (
-                              <button className="text-[10px] font-bold text-white flex items-center gap-1 hover:gap-2 transition-all">
-                                Generate follow-up plan <ArrowRight size={12} />
-                              </button>
-                            )}
                           </div>
                         </div>
                       )}

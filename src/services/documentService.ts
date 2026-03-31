@@ -8,12 +8,11 @@ import {
   query, 
   where, 
   orderBy, 
-  onSnapshot,
-  Timestamp
+  onSnapshot
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage, handleFirestoreError, OperationType } from "./firebase";
-import { Document, DocumentStatus } from "../types";
+import { Document } from "../types";
 import { timelineService } from "./timelineService";
 
 const COLLECTION = "documents";
@@ -113,6 +112,15 @@ export const documentService = {
           type: "action_taken",
           description: `Document analysis completed.`,
         });
+      } else if (data.status === "analysis-failed") {
+        await timelineService.logEvent({
+          householdId,
+          authorId,
+          entityId: id,
+          entityType: "document",
+          type: "action_taken",
+          description: `Document analysis was unavailable. Manual review is required.`,
+        });
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION}/${id}`);
@@ -149,7 +157,11 @@ export const documentService = {
   /**
    * Subscribes to all documents for a specific household.
    */
-  subscribeToHouseholdDocuments(householdId: string, callback: (documents: Document[]) => void) {
+  subscribeToHouseholdDocuments(
+    householdId: string,
+    callback: (documents: Document[]) => void,
+    onError?: (error: unknown) => void
+  ) {
     const q = query(
       collection(db, COLLECTION),
       where("householdId", "==", householdId),
@@ -163,6 +175,11 @@ export const documentService = {
       })) as Document[];
       callback(documents);
     }, (error) => {
+      if (onError) {
+        onError(error);
+        return;
+      }
+
       handleFirestoreError(error, OperationType.LIST, COLLECTION);
     });
   }

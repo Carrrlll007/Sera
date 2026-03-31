@@ -95,11 +95,20 @@ export async function extractDocumentData(base64Data: string, mimeType: string) 
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING },
-          type: { type: Type.STRING },
           deadlines: { type: Type.ARRAY, items: { type: Type.STRING } },
           summary: { type: Type.STRING },
-          metadata: { type: Type.OBJECT }
+          nextAction: { type: Type.STRING },
+          category: { type: Type.STRING },
+          extractedEntities: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                type: { type: Type.STRING }
+              }
+            }
+          }
         }
       }
     }

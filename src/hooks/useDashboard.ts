@@ -90,7 +90,7 @@ export function useDashboard() {
     );
 
     const pendingDocs = documents.filter(d => 
-      d.status === 'uploaded' || d.status === 'analyzed'
+      d.status === 'uploaded' || d.status === 'analyzed' || d.status === 'analysis-failed'
     );
 
     return {

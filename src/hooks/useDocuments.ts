@@ -7,20 +7,42 @@ import { extractDocumentData } from '../services/geminiService';
 import { Document } from '../types';
 import { toast } from 'sonner';
 import { canUserView, canUserEdit } from '../utils/permissions';
+import {
+  buildDocumentAnalysisFailureMetadata,
+  getFirstDetectedDeadline,
+  normalizeDocumentMetadata
+} from '../utils/documentAnalysis';
 
 export const useDocuments = () => {
   const { user, household } = useAuth();
   const { userRole } = useHousehold();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!household) return;
-    setIsLoading(true);
-    return documentService.subscribeToHouseholdDocuments(household.id, (docs) => {
-      setDocuments(docs);
+    if (!household) {
+      setDocuments([]);
+      setError(null);
       setIsLoading(false);
-    });
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    return documentService.subscribeToHouseholdDocuments(
+      household.id,
+      (docs) => {
+        setDocuments(docs);
+        setIsLoading(false);
+      },
+      (subscriptionError) => {
+        console.error('Failed to load documents:', subscriptionError);
+        setError('Documents could not be loaded right now.');
+        setIsLoading(false);
+      }
+    );
   }, [household]);
 
   const visibleDocuments = useMemo(() => {
@@ -47,21 +69,23 @@ export const useDocuments = () => {
         try {
           const base64 = (reader.result as string).split(',')[1];
           const data = await extractDocumentData(base64, file.type);
+          const normalizedMetadata = normalizeDocumentMetadata(data);
+          const firstDeadline = getFirstDetectedDeadline(data);
           
           // 3. Update with metadata
           await documentService.updateDocument(docId, {
-            metadata: data,
+            metadata: normalizedMetadata,
             status: 'analyzed'
           }, user.uid, household.id);
 
           // 4. Create task if deadlines detected
-          if (data.deadlines && data.deadlines.length > 0) {
+          if (firstDeadline) {
             await taskService.createTask({
               title: `Review: ${file.name}`,
-              description: data.summary || `Extracted from ${file.name}`,
+              description: normalizedMetadata.summary || `Extracted from ${file.name}`,
               type: 'document',
               priority: 'medium',
-              dueDate: data.deadlines[0] as any,
+              dueDate: firstDeadline,
               documentId: docId
             }, user.uid, household.id);
             toast.info('Deadline detected. Task created.');
@@ -70,8 +94,19 @@ export const useDocuments = () => {
           toast.success('Analysis complete');
         } catch (err) {
           console.error('AI Analysis failed:', err);
+          await documentService.updateDocument(docId, {
+            metadata: buildDocumentAnalysisFailureMetadata(),
+            status: 'analysis-failed'
+          }, user.uid, household.id);
           toast.error('Failed to analyze document, but it was uploaded successfully.');
         }
+      };
+      reader.onerror = async () => {
+        await documentService.updateDocument(docId, {
+          metadata: buildDocumentAnalysisFailureMetadata(),
+          status: 'analysis-failed'
+        }, user.uid, household.id);
+        toast.error('The uploaded document could not be read for analysis.');
       };
       reader.readAsDataURL(file);
 
@@ -104,6 +139,7 @@ export const useDocuments = () => {
     documents: visibleDocuments,
     allDocuments: documents,
     isLoading,
+    error,
     uploadDocument,
     deleteDocument
   };

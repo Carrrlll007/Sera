@@ -1,6 +1,11 @@
 import { Task, Case, Appointment, Document, Recommendation } from "../types";
 import { differenceInDays, isTomorrow, isBefore, addDays } from "date-fns";
 
+const CASES_ROUTE = "/cases";
+const DOCUMENTS_ROUTE = "/documents";
+const CALENDAR_ROUTE = "/calendar";
+const TASKS_ROUTE = "/tasks";
+
 /**
  * Deterministic Recommendations Generator
  * 
@@ -31,8 +36,8 @@ export const generateRecommendations = (
           description: `This case has been active for ${daysSinceUpdate} days without an update.`,
           linkedEntityId: c.id,
           linkedEntityType: "case",
-          actionLabel: "View Case",
-          actionRoute: `/cases/${c.id}`,
+          actionLabel: "Open Cases",
+          actionRoute: CASES_ROUTE,
           reasoning: `Status is "${c.status}" and last updated ${daysSinceUpdate} days ago.`,
           createdAt: Date.now(),
         });
@@ -54,8 +59,8 @@ export const generateRecommendations = (
           description: `This case is ready to submit but has no documents attached.`,
           linkedEntityId: c.id,
           linkedEntityType: "case",
-          actionLabel: "Add Document",
-          actionRoute: `/cases/${c.id}`,
+          actionLabel: "Open Documents",
+          actionRoute: DOCUMENTS_ROUTE,
           reasoning: `Case status is "ready-to-submit" but linked document count is 0.`,
           createdAt: Date.now(),
         });
@@ -76,8 +81,8 @@ export const generateRecommendations = (
         description: `You have an appointment tomorrow at ${a.provider} that needs preparation.`,
         linkedEntityId: a.id,
         linkedEntityType: "appointment",
-        actionLabel: "View Details",
-        actionRoute: `/appointments/${a.id}`,
+        actionLabel: "Open Calendar",
+        actionRoute: CALENDAR_ROUTE,
         reasoning: `Appointment is tomorrow and current state is "${a.state}".`,
         createdAt: Date.now(),
       });
@@ -104,8 +109,8 @@ export const generateRecommendations = (
           : `This task is due on ${dueDate?.toLocaleDateString()}.`,
         linkedEntityId: t.id,
         linkedEntityType: "task",
-        actionLabel: "Resolve",
-        actionRoute: `/tasks`,
+        actionLabel: "Open Tasks",
+        actionRoute: TASKS_ROUTE,
         reasoning: isUrgent ? "Priority is 'urgent'." : "Due date is within 48 hours.",
         createdAt: Date.now(),
       });
@@ -126,8 +131,8 @@ export const generateRecommendations = (
           description: `This ${c.category} case is unresolved and has no active tasks.`,
           linkedEntityId: c.id,
           linkedEntityType: "case",
-          actionLabel: "Add Task",
-          actionRoute: `/cases/${c.id}`,
+          actionLabel: "Open Cases",
+          actionRoute: CASES_ROUTE,
           reasoning: `Category is "${c.category}" and active task count is 0.`,
           createdAt: Date.now(),
         });

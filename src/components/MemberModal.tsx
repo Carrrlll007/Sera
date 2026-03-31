@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Shield, Baby, Heart } from 'lucide-react';
 import { MemberRole } from '../types';
 import { cn } from '../utils/cn';
-import { getRoleLabel } from '../utils/permissions';
 
 interface MemberModalProps {
   isOpen: boolean;
@@ -13,22 +12,20 @@ interface MemberModalProps {
 
 export const MemberModal: React.FC<MemberModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [displayName, setDisplayName] = useState('');
+  const [accountUid, setAccountUid] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<MemberRole>('member');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim() || !email.trim()) return;
+    if (!displayName.trim() || !accountUid.trim()) return;
 
     setIsSubmitting(true);
-    // In a real app, this would send an invite. For now, we simulate adding a member.
-    // We generate a dummy UID for the simulation.
-    const dummyUid = `user_${Math.random().toString(36).substr(2, 9)}`;
-    
-    onAdd({ displayName, email, role, uid: dummyUid });
+    onAdd({ displayName: displayName.trim(), email: email.trim(), role, uid: accountUid.trim() });
     onClose();
     setDisplayName('');
+    setAccountUid('');
     setEmail('');
     setRole('member');
     setIsSubmitting(false);
@@ -53,13 +50,16 @@ export const MemberModal: React.FC<MemberModalProps> = ({ isOpen, onClose, onAdd
           >
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-display font-bold text-zinc-900">Add Family Member</h2>
+                <h2 className="text-2xl font-display font-bold text-zinc-900">Add Existing Member</h2>
                 <button type="button" onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
                   <X size={20} />
                 </button>
               </div>
 
               <div className="space-y-4">
+                <p className="text-sm text-zinc-500">
+                  Add an existing Sera account to this household using that member&apos;s auth UID.
+                </p>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Full Name</label>
                   <input
@@ -71,7 +71,16 @@ export const MemberModal: React.FC<MemberModalProps> = ({ isOpen, onClose, onAdd
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Email Address</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Sera Account UID</label>
+                  <input
+                    placeholder="e.g. 7f3c9a2d..."
+                    className="w-full bg-zinc-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-zinc-900/5"
+                    value={accountUid}
+                    onChange={(e) => setAccountUid(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Email Address (Optional)</label>
                   <input
                     type="email"
                     placeholder="jane@example.com"
@@ -109,10 +118,10 @@ export const MemberModal: React.FC<MemberModalProps> = ({ isOpen, onClose, onAdd
 
               <button
                 type="submit"
-                disabled={!displayName.trim() || !email.trim() || isSubmitting}
+                disabled={!displayName.trim() || !accountUid.trim() || isSubmitting}
                 className="w-full bg-zinc-900 text-white py-4 rounded-2xl font-bold hover:bg-zinc-800 transition-all disabled:opacity-50"
               >
-                {isSubmitting ? 'Adding...' : 'Add to Household'}
+                {isSubmitting ? 'Adding...' : 'Add Existing Member'}
               </button>
             </form>
           </motion.div>

@@ -24,21 +24,39 @@ service cloud.firestore {
          (request.auth.token.email == "cgdortenzi@gmail.com" && request.auth.token.email_verified == true));
     }
 
-    match /{path=**}/timeline/{eventId} {
+    function isHouseholdOwner(householdId) {
+      return isMemberOfHousehold(householdId) &&
+        get(/databases/$(database)/documents/households/$(householdId)).data.ownerId == request.auth.uid;
+    }
+
+    function isHouseholdAdmin(householdId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function canManageHousehold(householdId) {
+      return isHouseholdOwner(householdId) || isHouseholdAdmin(householdId) || isAdmin();
+    }
+
+    match /timeline/{eventId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
+      allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
     }
 
     // Households
     match /households/{householdId} {
       allow read: if isMemberOfHousehold(householdId) || isAdmin();
-      allow create: if isAuthenticated();
-      allow update: if isMemberOfHousehold(householdId) || isAdmin();
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.members.hasAny([request.auth.uid]);
+      allow update: if canManageHousehold(householdId);
 
       match /members/{memberId} {
         allow read: if isMemberOfHousehold(householdId) || isAdmin();
-        allow create: if isMemberOfHousehold(householdId) || isAdmin();
-        allow update: if isMemberOfHousehold(householdId) || isAdmin();
-        allow delete: if isMemberOfHousehold(householdId) || isAdmin();
+        allow create: if canManageHousehold(householdId) && memberId == request.resource.data.uid;
+        allow update: if canManageHousehold(householdId);
+        allow delete: if canManageHousehold(householdId);
       }
     }
 
@@ -54,16 +72,20 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId))) || isAdmin();
-      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow update: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId)));
+      allow delete: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
     }
 
     // Cases
     match /cases/{caseId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId))) || isAdmin();
-      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow update: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && (isOwner(resource.data.authorId) || isOwner(resource.data.assigneeId)));
+      allow delete: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
       
       match /timeline/{eventId} {
         allow read: if isMemberOfHousehold(get(/databases/$(database)/documents/cases/$(caseId)).data.householdId) || isAdmin();
@@ -75,16 +97,20 @@ service cloud.firestore {
     match /documents/{documentId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
-      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow update: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
+      allow delete: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
     }
 
     // Appointments
     match /appointments/{appointmentId} {
       allow read: if isMemberOfHousehold(resource.data.householdId) || isAdmin();
       allow create: if isAuthenticated() && isMemberOfHousehold(request.resource.data.householdId);
-      allow update: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
-      allow delete: if (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId)) || isAdmin();
+      allow update: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
+      allow delete: if canManageHousehold(resource.data.householdId) ||
+        (isMemberOfHousehold(resource.data.householdId) && isOwner(resource.data.authorId));
     }
   }
 }

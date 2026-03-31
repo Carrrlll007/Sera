@@ -1,15 +1,16 @@
 import { 
   collection, 
   addDoc, 
+  setDoc,
   updateDoc, 
+  deleteDoc,
   doc, 
   getDoc,
   getDocs,
   serverTimestamp, 
   query, 
   where, 
-  onSnapshot,
-  Timestamp
+  onSnapshot
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { Household, HouseholdMember, MemberRole } from "../types";
@@ -32,7 +33,7 @@ export const householdService = {
       });
 
       // 2. Create Initial Member Record
-      const memberRef = await addDoc(collection(db, COLLECTION, householdRef.id, "members"), {
+      await setDoc(doc(db, COLLECTION, householdRef.id, "members", ownerId), {
         uid: ownerId,
         displayName: ownerDisplayName,
         email: ownerEmail,
@@ -40,7 +41,7 @@ export const householdService = {
         joinedAt: serverTimestamp(),
       });
 
-      return { householdId: householdRef.id, memberId: memberRef.id };
+      return { householdId: householdRef.id, memberId: ownerId };
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, COLLECTION);
     }
@@ -104,7 +105,7 @@ export const householdService = {
   },
 
   /**
-   * Invites a new member to the household (simulated for now by direct addition).
+   * Adds an existing Sera account to the household by auth UID.
    */
   async addMember(householdId: string, memberData: Omit<HouseholdMember, "id" | "joinedAt">) {
     try {
@@ -121,12 +122,12 @@ export const householdService = {
         });
       }
 
-      const memberRef = await addDoc(collection(db, COLLECTION, householdId, "members"), {
+      await setDoc(doc(db, COLLECTION, householdId, "members", memberData.uid), {
         ...memberData,
         joinedAt: serverTimestamp()
       });
 
-      return memberRef.id;
+      return memberData.uid;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `${COLLECTION}/${householdId}/members`);
     }
@@ -149,12 +150,8 @@ export const householdService = {
    */
   async removeMember(householdId: string, memberId: string, uid: string) {
     try {
-      // 1. Remove from members subcollection
-      await updateDoc(doc(db, COLLECTION, householdId, "members", memberId), {
-        role: "archived" // Soft delete or actual delete
-      });
+      await deleteDoc(doc(db, COLLECTION, householdId, "members", memberId));
 
-      // 2. Remove UID from household members array
       const householdRef = doc(db, COLLECTION, householdId);
       const householdSnap = await getDoc(householdRef);
       if (householdSnap.exists()) {

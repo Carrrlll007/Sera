@@ -19,7 +19,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const { upload, progress, isUploading, error, docId, reset } = useDocumentUpload();
+  const { upload, progress, isUploading, isAnalyzing, error, docId, reset } = useDocumentUpload();
 
   const handleFile = async (file: File) => {
     const metadata: any = {};
@@ -117,6 +117,44 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               />
             </div>
           </motion.div>
+        ) : isAnalyzing ? (
+          <motion.div
+            key="analyzing"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white border border-zinc-100 rounded-[2rem] p-8 shadow-sm"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center animate-pulse">
+                <FileText className="text-zinc-400" size={20} />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-zinc-900">Upload complete</p>
+                <p className="text-xs text-zinc-400">Sera is analyzing the document details now.</p>
+              </div>
+            </div>
+          </motion.div>
+        ) : docId && error ? (
+          <motion.div
+            key="analysis-warning"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-amber-50 border border-amber-100 rounded-[2rem] p-8 flex items-center gap-6"
+          >
+            <div className="w-12 h-12 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-200">
+              <AlertCircle size={24} />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-amber-900">Uploaded for manual review</p>
+              <p className="text-xs text-amber-700">{error}</p>
+            </div>
+            <button
+              onClick={reset}
+              className="bg-white text-amber-900 px-4 py-2 rounded-xl text-xs font-bold hover:bg-amber-100 transition-all"
+            >
+              Upload Another
+            </button>
+          </motion.div>
         ) : docId ? (
           <motion.div
             key="success"
@@ -128,8 +166,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               <CheckCircle2 size={24} />
             </div>
             <div className="flex-1">
-              <p className="font-bold text-emerald-900">Upload Complete</p>
-              <p className="text-xs text-emerald-600">Sera is now analyzing the document content.</p>
+              <p className="font-bold text-emerald-900">Document Ready</p>
+              <p className="text-xs text-emerald-600">Upload and analysis completed successfully.</p>
             </div>
             <button 
               onClick={reset}
@@ -138,7 +176,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               <X size={20} />
             </button>
           </motion.div>
-        ) : (
+        ) : error ? (
           <motion.div
             key="error"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -159,7 +197,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               Try Again
             </button>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );

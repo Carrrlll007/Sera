@@ -23,7 +23,7 @@ import { DocumentUpload } from "../components/DocumentUpload";
 
 export const DocumentsPage: React.FC = () => {
   const { household, user } = useAuth();
-  const { documents, deleteDocument, isLoading } = useDocuments();
+  const { documents, deleteDocument, isLoading, error } = useDocuments();
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
 
@@ -70,6 +70,14 @@ export const DocumentsPage: React.FC = () => {
           {isLoading ? (
             <div className="flex items-center justify-center p-20">
               <div className="w-8 h-8 border-4 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="bg-white border border-red-100 rounded-[2.5rem] p-10 text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="text-red-400" size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 mb-2">Documents are unavailable</h3>
+              <p className="text-zinc-500 max-w-sm mx-auto">{error}</p>
             </div>
           ) : documents.length === 0 ? (
             <div className="bg-white border border-dashed border-zinc-200 rounded-[2.5rem] p-20 text-center">
@@ -131,7 +139,7 @@ export const DocumentsPage: React.FC = () => {
                   <div>
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-3">Sera's Summary</h4>
                     <p className="text-sm text-zinc-600 leading-relaxed bg-zinc-50 p-4 rounded-2xl">
-                      {selectedDoc.metadata?.summary || "Processing document details..."}
+                      {getDocumentSummary(selectedDoc)}
                     </p>
                   </div>
 
@@ -207,4 +215,16 @@ const DetailItem = ({ icon, label, value }: any) => (
   </div>
 );
 
-// Removed local cn function as it's now imported from ../lib/utils
+const getDocumentSummary = (document: Document) => {
+  if (document.metadata?.summary) return document.metadata.summary;
+
+  if (document.status === "analysis-failed") {
+    return "Automatic analysis was unavailable for this document.";
+  }
+
+  if (document.status === "uploaded") {
+    return "Document uploaded. Analysis has not completed yet.";
+  }
+
+  return "No summary is available for this document.";
+};

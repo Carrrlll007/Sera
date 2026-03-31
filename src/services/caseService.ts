@@ -187,7 +187,11 @@ export const caseService = {
   /**
    * Subscribes to the timeline events for a specific case.
    */
-  subscribeToCaseTimeline(caseId: string, callback: (events: any[]) => void) {
-    return timelineService.subscribeToEntityTimeline(caseId, callback);
+  subscribeToCaseTimeline(caseId: string, householdId: string, callback: (events: any[]) => void) {
+    return timelineService.subscribeToEntityTimeline({
+      householdId,
+      entityId: caseId,
+      entityType: "case",
+    }, callback);
   }
 };

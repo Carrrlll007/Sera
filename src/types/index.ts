@@ -188,7 +188,7 @@ export interface Appointment {
  * DOCUMENTS
  */
 
-export type DocumentStatus = "uploaded" | "analyzed" | "actioned" | "archived";
+export type DocumentStatus = "uploaded" | "analyzed" | "analysis-failed" | "actioned" | "archived";
 
 export interface Document {
   id: string;
@@ -214,6 +214,7 @@ export interface Document {
     extractedEntities?: Array<{ name: string; type: string }>;
     nextAction?: string;
     category?: string;
+    analysisError?: string;
   };
   
   createdAt: Timestamp;

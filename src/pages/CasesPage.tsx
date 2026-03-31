@@ -38,12 +38,12 @@ export const CasesPage: React.FC = () => {
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
   useEffect(() => {
-    if (!selectedCase?.id) {
+    if (!selectedCase?.id || !selectedCase.householdId) {
       setTimeline([]);
       return;
     }
-    return subscribeToCaseTimeline(selectedCase.id, setTimeline);
-  }, [selectedCase?.id, subscribeToCaseTimeline]);
+    return subscribeToCaseTimeline(selectedCase.id, selectedCase.householdId, setTimeline);
+  }, [selectedCase?.id, selectedCase?.householdId, subscribeToCaseTimeline]);
 
   // Keep selected case in sync with the list
   useEffect(() => {

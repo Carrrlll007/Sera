@@ -84,7 +84,7 @@ export const FamilyPage: React.FC = () => {
             className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
           >
             <UserPlus size={20} />
-            Invite Member
+            Add Member
           </button>
         )}
       </div>
@@ -111,7 +111,6 @@ export const FamilyPage: React.FC = () => {
               />
             ))}
             
-            {/* Placeholder for inviting new members */}
             {canManageMembers(userRole) && (
               <button 
                 onClick={() => setIsModalOpen(true)}
@@ -121,8 +120,8 @@ export const FamilyPage: React.FC = () => {
                   <UserPlus size={24} />
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-zinc-900">Add a family member</p>
-                  <p className="text-xs text-zinc-400">Partner, child, or caregiver</p>
+                  <p className="font-bold text-zinc-900">Add an existing member</p>
+                  <p className="text-xs text-zinc-400">Requires a Sera account UID</p>
                 </div>
               </button>
             )}

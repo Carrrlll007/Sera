@@ -103,8 +103,12 @@ export function useCases() {
     return caseService.subscribeToCase(caseId, callback);
   };
 
-  const subscribeToCaseTimeline = (caseId: string, callback: (events: TimelineEvent[]) => void) => {
-    return caseService.subscribeToCaseTimeline(caseId, callback);
+  const subscribeToCaseTimeline = (
+    caseId: string,
+    householdId: string,
+    callback: (events: TimelineEvent[]) => void
+  ) => {
+    return caseService.subscribeToCaseTimeline(caseId, householdId, callback);
   };
 
   return {

@@ -5,8 +5,7 @@ import {
   query, 
   where, 
   orderBy, 
-  onSnapshot,
-  collectionGroup
+  onSnapshot
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase";
 import { TimelineEvent, TimelineEventType, EntityType } from "../types";
@@ -63,10 +62,19 @@ export const timelineService = {
   /**
    * Subscribes to events for a specific entity (e.g., a specific Case).
    */
-  subscribeToEntityTimeline(entityId: string, callback: (events: TimelineEvent[]) => void) {
+  subscribeToEntityTimeline(
+    params: {
+      householdId: string;
+      entityId: string;
+      entityType: EntityType;
+    },
+    callback: (events: TimelineEvent[]) => void
+  ) {
     const q = query(
       collection(db, COLLECTION),
-      where("entityId", "==", entityId),
+      where("householdId", "==", params.householdId),
+      where("entityId", "==", params.entityId),
+      where("entityType", "==", params.entityType),
       orderBy("createdAt", "desc")
     );
 

@@ -17,6 +17,23 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  Timestamp: class MockTimestamp {
+    seconds: number;
+    nanoseconds: number;
+
+    constructor(seconds: number, nanoseconds: number) {
+      this.seconds = seconds;
+      this.nanoseconds = nanoseconds;
+    }
+
+    static fromDate(date: Date) {
+      return new MockTimestamp(Math.floor(date.getTime() / 1000), date.getMilliseconds() * 1_000_000);
+    }
+
+    toDate() {
+      return new Date((this.seconds * 1000) + Math.floor(this.nanoseconds / 1_000_000));
+    }
+  },
   getFirestore: vi.fn(),
   collection: vi.fn().mockReturnValue('mock-collection'),
   doc: vi.fn().mockReturnValue('mock-doc'),
