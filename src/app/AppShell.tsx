@@ -38,7 +38,7 @@ export const AppShell: React.FC = () => {
             </div>
             <h1 className="text-2xl font-display font-bold tracking-tighter text-zinc-900">Sera</h1>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Life Admin OS</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Life, Handled.</p>
         </div>
         
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">

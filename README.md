@@ -49,7 +49,7 @@ Sera is built as a modern, full-stack application designed for real-time coordin
 2.  **Environment Configuration**:
     Create a `.env` file based on `.env.example`:
     ```env
-    GEMINI_API_KEY=your_key_here
+    GEMINI_API_KEY=
     ```
 3.  **Firebase Configuration**:
     Populate `firebase-applet-config.json` with your Firebase project credentials.
@@ -84,4 +84,4 @@ npm run test
 We believe the future of personal productivity isn't a better "to-do list"—it's an agent that understands the *context* of your life and takes the work off your plate. Sera is moving toward a world where life-admin doesn't just feel managed; it feels handled.
 
 ---
-*Sera | Built for the modern household.*
+*Sera | Life, Handled.*
