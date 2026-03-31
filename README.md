@@ -34,40 +34,55 @@ Sera is built as a modern, full-stack application designed for real-time coordin
 *   **Utilities**: date-fns, sonner (Toasts), zod (Validation)
 *   **Testing**: Vitest
 
-## Setup Instructions
+## Setup
 
 ### Prerequisites
 - Node.js (v20+)
-- A Firebase project
-- A Gemini API Key (from Google AI Studio)
+- Firebase Project
+- Google Gemini API Key
 
 ### Local Development
-1.  **Clone and Install**:
-    ```bash
-    npm install
-    ```
-2.  **Environment Configuration**:
-    Create a `.env` file based on `.env.example`:
-    ```env
-    GEMINI_API_KEY=
-    ```
-3.  **Firebase Configuration**:
-    Populate `firebase-applet-config.json` with your Firebase project credentials.
-4.  **Start the Server**:
-    ```bash
-    npm run dev
-    ```
-    The app will be available at `http://localhost:3000`.
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and add your `GEMINI_API_KEY`.
+
+3. **Firebase setup**:
+   Create `firebase-config.json` based on `firebase-config.example.json` and populate it with your project credentials.
+
+4. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at `http://localhost:3000`.
 
 ## Testing
+
 To run the test suite:
 ```bash
 npm run test
 ```
 
+## Repository Structure
+
+- `src/`: Core application source code (React + TypeScript).
+- `public/`: Static assets (favicon, etc.).
+- `tools/platform/`: Platform-specific artifacts (blueprints, metadata).
+- `firebase-config.json`: Firebase project configuration.
+- `firestore.rules`: Security rules for the Firestore database.
+- `server.ts`: Express server entry point.
+- `.env.example`: Template for environment variables.
+
 ## Environment Variables
-*   `GEMINI_API_KEY`: Required for all AI-driven features (intent parsing, document extraction).
-*   `APP_URL`: Used for self-referential links and OAuth callbacks (automatically handled in AI Studio).
+
+- `GEMINI_API_KEY` (Required): Your Google Gemini API key, used for intent parsing and document intelligence.
+- `APP_URL` (Optional): The base URL of the application, used for absolute links and OAuth callbacks.
 
 ## Roadmap
 - [ ] **Deep Integrations**: Direct sync with Gmail and Google Calendar to capture admin at the source.

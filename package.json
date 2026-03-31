@@ -1,8 +1,8 @@
 {
   "name": "sera",
   "private": true,
-  "version": "1.0.0",
-  "description": "A calm AI life-admin assistant for individuals and families. Sera helps life feel handled by managing appointments, documents, and complex cases with ease.",
+  "version": "0.1.0",
+  "description": "A calm AI life-admin assistant for individuals and families.",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

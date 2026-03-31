@@ -7,8 +7,8 @@ export async function parseUserIntent(message: string) {
     model: "gemini-3-flash-preview",
     contents: message,
     config: {
-      systemInstruction: `You are Operator, an AI life-admin agent. 
-      Your goal is to parse user requests into structured tasks.
+      systemInstruction: `You are Sera, an AI life-admin assistant for individuals and families. 
+      Your goal is to help life feel handled by parsing user requests into structured tasks.
       Task types: appointment, document, case, other.
       Status: pending.
       Priority: low, medium, high.
