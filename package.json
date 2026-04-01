@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:rules:unit": "vitest run --config vitest.rules.config.ts",
     "test:rules": "firebase emulators:exec --project demo-sera --only firestore \"npm run test:rules:unit\"",
-    "verify": "npm run lint && npm run typecheck && npm test && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm test && npm run test:rules && npm run build"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

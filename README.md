@@ -78,6 +78,8 @@ npm run test:rules
 npm run build
 ```
 
+`npm run verify` runs the same trusted gate set end-to-end, including the Firestore rules suite.
+
 `npm run test:rules` runs the Firestore emulator through the repo-pinned Firebase CLI, so a local JDK is required.
 
 To run only the test suite:
