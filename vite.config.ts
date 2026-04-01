@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import {configDefaults} from 'vitest/config';
 import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
@@ -22,6 +23,7 @@ export default defineConfig(({mode}) => {
     test: {
       globals: true,
       environment: 'jsdom',
+      exclude: [...configDefaults.exclude, 'tests/firestore.rules.test.ts'],
       setupFiles: ['./src/test/setup.ts'],
     },
   };

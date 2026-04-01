@@ -17,6 +17,9 @@ import { timelineService } from "./timelineService";
 import { VALID_CASE_TRANSITIONS, getNextRecommendedAction } from "../constants/caseTransitions";
 
 const COLLECTION = "cases";
+const isCaseDomainError = (error: unknown) =>
+  error instanceof Error &&
+  (error.message === "Case not found" || error.message.startsWith("Invalid transition from "));
 
 export const caseService = {
   /**
@@ -106,6 +109,9 @@ export const caseService = {
         }
       });
     } catch (error) {
+      if (isCaseDomainError(error)) {
+        throw error;
+      }
       handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION}/${id}`);
       throw error;
     }

@@ -69,14 +69,20 @@ Sera is built as a modern, full-stack application designed for real-time coordin
 
 ## Testing
 
-To run the test suite:
+Verification commands:
 ```bash
+npm run lint
+npm run typecheck
 npm run test
+npm run test:rules
+npm run build
 ```
 
-TypeScript checks:
+`npm run test:rules` runs the Firestore emulator through the repo-pinned Firebase CLI, so a local JDK is required.
+
+To run only the test suite:
 ```bash
-npm run typecheck
+npm run test
 ```
 
 ## Repository Structure

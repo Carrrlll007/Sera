@@ -56,5 +56,7 @@ vi.mock('firebase/storage', () => ({
   getStorage: vi.fn(),
   ref: vi.fn(),
   uploadBytes: vi.fn(),
+  uploadBytesResumable: vi.fn(),
   getDownloadURL: vi.fn(),
+  deleteObject: vi.fn(),
 }));
