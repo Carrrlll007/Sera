@@ -2,29 +2,23 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {configDefaults} from 'vitest/config';
-import {defineConfig, loadEnv} from 'vite';
+import {defineConfig} from 'vite';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
-  return {
-    plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
     },
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR can be disabled via DISABLE_HMR env var to prevent flickering during automated edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-    },
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'tests/firestore.rules.test.ts'],
-      setupFiles: ['./src/test/setup.ts'],
-    },
-  };
+  },
+  server: {
+    // HMR can be disabled via DISABLE_HMR env var to prevent flickering during automated edits.
+    hmr: process.env.DISABLE_HMR !== 'true',
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    exclude: [...configDefaults.exclude, 'tests/firestore.rules.test.ts'],
+    setupFiles: ['./src/test/setup.ts'],
+  },
 });

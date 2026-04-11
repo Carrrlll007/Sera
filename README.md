@@ -12,8 +12,8 @@ Sera is built for individuals and families who are "time-poor but responsibility
 Sera is currently in its early stages, focusing on the core pillars of life-coordination:
 
 *   **Intelligence Feed (Home)**: A proactive dashboard that surfaces what needs your attention now, from upcoming deadlines to Sera's latest insights.
-*   **Ask Sera (Command Center)**: A natural language interface that understands intent. You can describe a complex situation (e.g., "I need to track a dental reimbursement"), and Sera will propose a multi-step plan to resolve it.
-*   **Document Intelligence**: A secure repository for the letters and forms that usually sit on the kitchen counter. Sera extracts deadlines, providers, and next steps automatically.
+*   **Ask Sera (Command Center)**: A natural language interface that turns a request into a structured plan you can apply to create tasks, cases, appointments, and reminders.
+*   **Document Intelligence**: A secure repository for household documents. Sera can analyze uploaded files through the backend and capture deadlines, entities, and next actions when AI analysis is configured.
 *   **Case Management**: For multi-step life events that don't fit into a simple checkbox—like an insurance claim or a school application. Track every note, document, and status change in one place.
 *   **Family Workspace**: A shared environment for households to delegate tasks, sync on appointments, and maintain a single source of truth for family logistics.
 
@@ -21,8 +21,8 @@ Sera is currently in its early stages, focusing on the core pillars of life-coor
 Sera is built as a modern, full-stack application designed for real-time coordination and high-trust data handling.
 
 *   **Frontend**: A responsive Single Page Application (SPA) built with **React 19** and **Vite**. We use **Tailwind CSS** for a premium, minimal aesthetic and **Framer Motion** for calm, fluid transitions.
-*   **Backend**: A lightweight **Express** server that handles API routing and serves the frontend via Vite middleware in development.
-*   **Intelligence Layer**: Powered by **Google Gemini**. We use LLMs for intent parsing in the chat interface and structured data extraction from uploaded documents.
+*   **Backend**: A lightweight **Express** server that handles API routing, runs Gemini-backed AI endpoints, and serves the frontend via Vite middleware in development.
+*   **Intelligence Layer**: Powered by **Google Gemini** through server-side `/api/ai/plan` and `/api/documents/analyze` endpoints. The browser never receives the Gemini API key.
 *   **Persistence & Real-time**: **Firebase Firestore** provides the real-time data layer, ensuring that family members stay in sync instantly. **Firebase Authentication** handles secure user identity.
 
 ## Tech Stack
@@ -30,7 +30,7 @@ Sera is built as a modern, full-stack application designed for real-time coordin
 *   **Styling**: Tailwind CSS 4, Lucide React (Icons)
 *   **Animation**: Framer Motion / Motion
 *   **Database/Auth**: Firebase (Firestore, Auth)
-*   **AI**: @google/genai (Gemini 3.1 Flash/Pro)
+*   **AI**: @google/genai (Gemini, server-side only)
 *   **Utilities**: date-fns, sonner (Toasts), zod (Validation)
 *   **Testing**: Vitest
 
@@ -51,7 +51,7 @@ Sera is built as a modern, full-stack application designed for real-time coordin
    ```bash
    cp .env.example .env
    ```
-   Open `.env` and add your `GEMINI_API_KEY` plus the Firebase web app values used by the client:
+   Open `.env` and add your server-side `GEMINI_API_KEY` plus the Firebase web app values used by the client:
    - `VITE_FIREBASE_API_KEY`
    - `VITE_FIREBASE_AUTH_DOMAIN`
    - `VITE_FIREBASE_PROJECT_ID`
@@ -60,6 +60,8 @@ Sera is built as a modern, full-stack application designed for real-time coordin
    - `VITE_FIREBASE_APP_ID`
    - `VITE_FIREBASE_MEASUREMENT_ID`
    - `VITE_FIREBASE_FIRESTORE_DATABASE_ID` only if you are not using the default Firestore database
+
+   `GEMINI_API_KEY` is read only by the Express server for `/api/ai/plan` and `/api/documents/analyze`. Do not add it to any `VITE_*` variable.
 
 3. **Start development server**:
    ```bash
@@ -98,7 +100,8 @@ npm run test
 
 ## Environment Variables
 
-- `GEMINI_API_KEY` (Required): Your Google Gemini API key, used for intent parsing and document intelligence.
+- `GEMINI_API_KEY` (Required for Ask Sera and document analysis): Server-only Gemini API key used by the Express AI endpoints.
+- `GEMINI_MODEL` (Optional): Overrides the backend Gemini model. Defaults to `gemini-2.5-flash`.
 - `VITE_FIREBASE_API_KEY` (Required): Firebase web API key.
 - `VITE_FIREBASE_AUTH_DOMAIN` (Required): Firebase Auth domain.
 - `VITE_FIREBASE_PROJECT_ID` (Required): Firebase project ID.
@@ -115,7 +118,7 @@ npm run test
 - [ ] **Sera for Caregivers**: Specialized workflows for managing the lives of elderly parents or dependents.
 
 ## Current Limitations
-*   **Manual Verification**: While Sera's document extraction is highly accurate, we recommend a quick review of extracted deadlines.
+*   **Manual Verification**: AI-generated plans and document analysis should still be reviewed before you act on them.
 *   **Limited Integrations**: Currently, data must be brought into Sera (via chat or upload). Direct "read" access to external accounts is in development.
 *   **Mobile Web**: The experience is responsive but optimized for desktop-grade administration. A native mobile experience is not yet available.
 

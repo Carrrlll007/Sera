@@ -66,7 +66,7 @@ export const useDocumentUpload = () => {
       reader.onload = async () => {
         try {
           const base64 = (reader.result as string).split(',')[1];
-          const data = await extractDocumentData(base64, file.type);
+          const data = await extractDocumentData(base64, file.type, file.name);
           const normalizedMetadata = normalizeDocumentMetadata(data);
           const firstDeadline = getFirstDetectedDeadline(data);
           

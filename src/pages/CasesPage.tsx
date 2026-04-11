@@ -6,7 +6,6 @@ import { RecommendationCard } from "../components/RecommendationCard";
 import { 
   Briefcase, 
   Plus, 
-  Search, 
   ChevronRight,
   Clock,
   CheckCircle2,
@@ -49,9 +48,11 @@ export const CasesPage: React.FC = () => {
   useEffect(() => {
     if (selectedCase) {
       const updated = cases.find(c => c.id === selectedCase.id);
-      if (updated) setSelectedCase(updated);
+      if (updated && updated !== selectedCase) {
+        setSelectedCase(updated);
+      }
     }
-  }, [cases, selectedCase?.id]);
+  }, [cases, selectedCase]);
 
   const handleAddNote = async () => {
     if (!selectedCase || !note.trim() || isSubmittingNote) return;
@@ -96,15 +97,6 @@ export const CasesPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Case List */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search cases..." 
-              className="w-full bg-white border border-zinc-100 rounded-2xl py-3 pl-12 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-zinc-900/5 transition-all"
-            />
-          </div>
-
           {cases.length === 0 ? (
             <div className="bg-white border border-dashed border-zinc-200 rounded-[2.5rem] p-20 text-center">
               <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto mb-6">

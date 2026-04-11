@@ -129,20 +129,20 @@ export const FamilyPage: React.FC = () => {
 
           <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold text-zinc-900">Household Settings</h3>
+              <h3 className="text-xl font-bold text-zinc-900">Household Access</h3>
               <Settings size={20} className="text-zinc-400" />
             </div>
             
             <div className="space-y-2">
               <SettingsItem 
                 icon={<Shield size={18} className="text-zinc-400" />} 
-                title="Privacy & Permissions" 
-                description="Control who can see documents and cases."
+                title="Roles are enforced by household membership" 
+                description="Admins can manage members. Other access is scoped by role and household rules."
               />
               <SettingsItem 
                 icon={<Mail size={18} className="text-zinc-400" />} 
-                title="Notification Preferences" 
-                description="Manage how Sera nudges family members."
+                title="Member invites require an existing Sera account UID" 
+                description="This workspace can add only accounts that already exist in Firebase Auth."
               />
             </div>
           </div>
@@ -280,14 +280,13 @@ const MemberCard = ({ member, isMe, taskCount, canManage, onUpdateRole, onRemove
 };
 
 const SettingsItem = ({ icon, title, description }: any) => (
-  <button className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-zinc-50 transition-all text-left group">
+  <div className="w-full flex items-center gap-4 p-4 rounded-2xl bg-zinc-50 text-left">
     <div className="shrink-0">{icon}</div>
     <div className="flex-1">
       <p className="text-sm font-bold text-zinc-900">{title}</p>
       <p className="text-xs text-zinc-400">{description}</p>
     </div>
-    <ChevronRight size={16} className="text-zinc-200 group-hover:text-zinc-900 transition-colors" />
-  </button>
+  </div>
 );
 
 const ActivityItem = ({ icon, text, time }: any) => (

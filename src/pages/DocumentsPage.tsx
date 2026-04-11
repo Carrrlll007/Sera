@@ -5,9 +5,6 @@ import { householdService } from "../services/householdService";
 import { Document, HouseholdMember } from "../types";
 import { 
   FileText, 
-  Search, 
-  Filter, 
-  MoreVertical, 
   ChevronRight,
   Clock,
   User,
@@ -57,15 +54,6 @@ export const DocumentsPage: React.FC = () => {
         {/* Document List */}
         <div className="lg:col-span-2 space-y-6">
           <DocumentUpload />
-
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search documents..." 
-              className="w-full bg-white border border-zinc-100 rounded-2xl py-3 pl-12 pr-4 text-sm shadow-sm focus:ring-2 focus:ring-zinc-900/5 transition-all"
-            />
-          </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center p-20">
@@ -125,9 +113,6 @@ export const DocumentsPage: React.FC = () => {
                       title="Delete document"
                     >
                       <Trash2 size={20} />
-                    </button>
-                    <button className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors">
-                      <MoreVertical size={20} />
                     </button>
                   </div>
                 </div>

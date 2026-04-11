@@ -32,10 +32,15 @@ export function useDashboard() {
     documentsLoading || 
     timelineLoading;
 
-  const today = new Date();
-  const startOfToday = startOfDay(today);
-  const endOfToday = endOfDay(today);
-  const endOfWeek = endOfDay(addDays(today, 7));
+  const { today, startOfToday, endOfToday, endOfWeek } = useMemo(() => {
+    const current = new Date();
+    return {
+      today: current,
+      startOfToday: startOfDay(current),
+      endOfToday: endOfDay(current),
+      endOfWeek: endOfDay(addDays(current, 7)),
+    };
+  }, []);
 
   const attentionToday = useMemo(() => {
     const urgentTasks = tasks.filter(t => 
@@ -59,7 +64,7 @@ export function useDashboard() {
       reminders: todayReminders,
       total: urgentTasks.length + todayAppointments.length + todayReminders.length
     };
-  }, [tasks, appointments, reminders]);
+  }, [tasks, appointments, reminders, today]);
 
   const urgentThisWeek = useMemo(() => {
     const interval = { start: startOfToday, end: endOfWeek };
@@ -82,7 +87,7 @@ export function useDashboard() {
       appointments: weekAppointments,
       total: weekTasks.length + weekAppointments.length
     };
-  }, [tasks, appointments]);
+  }, [tasks, appointments, endOfWeek, startOfToday, today]);
 
   const unresolvedAndWaiting = useMemo(() => {
     const waitingCases = cases.filter(c => 

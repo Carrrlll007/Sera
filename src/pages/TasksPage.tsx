@@ -4,15 +4,8 @@ import { Task, TaskStatus, Priority } from "../types";
 import { 
   CheckCircle2, 
   Circle, 
-  Clock, 
-  AlertCircle, 
   Plus, 
-  Search, 
-  Filter,
   Calendar as CalendarIcon,
-  User,
-  MoreVertical,
-  ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
@@ -60,19 +53,11 @@ export const TasksPage: React.FC = () => {
 
       <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-2 rounded-[2rem] border border-zinc-100 shadow-sm">
+      <div className="bg-white p-2 rounded-[2rem] border border-zinc-100 shadow-sm">
         <div className="flex items-center gap-1 p-1 bg-zinc-50 rounded-2xl w-full md:w-auto">
           <FilterButton active={filter === 'all'} onClick={() => setFilter('all')} label="All" />
           <FilterButton active={filter === 'pending'} onClick={() => setFilter('pending')} label="Pending" />
           <FilterButton active={filter === 'completed'} onClick={() => setFilter('completed')} label="Completed" />
-        </div>
-        <div className="relative w-full md:w-64 px-2">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search tasks..." 
-            className="w-full bg-zinc-50 border-none rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-zinc-900/5 transition-all"
-          />
         </div>
       </div>
 
@@ -157,12 +142,6 @@ const TaskCard = ({ task, onToggle, priorityColor }: any) => {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors">
-          <MoreVertical size={18} />
-        </button>
       </div>
     </motion.div>
   );

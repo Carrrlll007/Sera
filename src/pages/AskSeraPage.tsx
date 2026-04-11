@@ -3,31 +3,24 @@ import { useAuth } from "../app/providers/AuthProvider";
 import { 
   Send, 
   Sparkles, 
-  Plus, 
   Calendar, 
   FileText, 
   Briefcase, 
   ArrowRight,
-  ChevronRight,
-  Search,
   CheckCircle2,
-  AlertCircle,
-  Clock,
-  User,
   Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { aiPlannerService } from "../services/aiPlannerService";
 import { useTasks } from "../hooks/useTasks";
 import { useCases } from "../hooks/useCases";
 import { useAppointments } from "../hooks/useAppointments";
 import { useReminders } from "../hooks/useReminders";
 import { useRecommendations } from "../hooks/useRecommendations";
-import { AIActionPlan, AIAction, Recommendation } from "../types";
+import { AIActionPlan, Recommendation } from "../types";
 import { RecommendationCard } from "../components/RecommendationCard";
 import { Timestamp } from "firebase/firestore";
-import { addDays, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { cn } from "../utils/cn";
 import { toast } from "sonner";
 
@@ -40,7 +33,6 @@ interface ChatMessage {
 
 export const AskSeraPage: React.FC = () => {
   const { user, household } = useAuth();
-  const navigate = useNavigate();
   const { createTask } = useTasks();
   const { createCase } = useCases();
   const { createAppointment } = useAppointments();
@@ -67,7 +59,10 @@ export const AskSeraPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const plan = await aiPlannerService.planActions(text);
+      const plan = await aiPlannerService.planActions(text, {
+        householdName: household.name,
+        authorName: user.displayName || "User",
+      });
       
       setHistory(prev => [...prev, { 
         role: 'sera', 
@@ -76,7 +71,9 @@ export const AskSeraPage: React.FC = () => {
       }]);
     } catch (error) {
       console.error(error);
-      setHistory(prev => [...prev, { role: 'sera', content: "I'm sorry, I had trouble generating that plan. Could you try rephrasing?" }]);
+      const errorMessage =
+        error instanceof Error ? error.message : "Plan generation is unavailable right now.";
+      setHistory(prev => [...prev, { role: 'sera', content: errorMessage }]);
     } finally {
       setIsProcessing(false);
     }
@@ -106,6 +103,9 @@ export const AskSeraPage: React.FC = () => {
               category: action.data.category || "other",
               metadata: action.data.metadata
             }) || null;
+            if (!createdId) {
+              throw new Error(`Failed to create case: ${action.title}`);
+            }
           } else if (action.type === 'appointment') {
             const date = action.data.date ? Timestamp.fromDate(parseISO(action.data.date)) : Timestamp.now();
             createdId = await createAppointment({
@@ -117,6 +117,9 @@ export const AskSeraPage: React.FC = () => {
               notes: action.description,
               caseId: action.data.caseId === 'NEW_CASE' ? createdIds['case'] : action.data.caseId
             }) || null;
+            if (!createdId) {
+              throw new Error(`Failed to create appointment: ${action.title}`);
+            }
           } else if (action.type === 'task') {
             const dueDate = action.data.dueDate ? Timestamp.fromDate(parseISO(action.data.dueDate)) : null;
             createdId = await createTask({
@@ -128,6 +131,9 @@ export const AskSeraPage: React.FC = () => {
               dueDate: dueDate as any,
               caseId: action.data.caseId === 'NEW_CASE' ? createdIds['case'] : action.data.caseId
             }) || null;
+            if (!createdId) {
+              throw new Error(`Failed to create task: ${action.title}`);
+            }
           } else if (action.type === 'reminder') {
             const targetDate = action.data.targetDate ? Timestamp.fromDate(parseISO(action.data.targetDate)) : Timestamp.now();
             createdId = await createReminder({
@@ -137,6 +143,9 @@ export const AskSeraPage: React.FC = () => {
               linkedEntityType: action.data.linkedEntityType || "task",
               linkedEntityId: action.data.linkedEntityId === 'NEW_ENTITY' ? (createdIds['task'] || createdIds['case'] || createdIds['appointment']) : action.data.linkedEntityId
             }) || null;
+            if (!createdId) {
+              throw new Error(`Failed to create reminder: ${action.title}`);
+            }
           }
 
           if (createdId) {
@@ -154,16 +163,16 @@ export const AskSeraPage: React.FC = () => {
       toast.success("Plan executed successfully", { id: toastId });
     } catch (error) {
       console.error("Execution failed:", error);
-      toast.error("Failed to execute some actions", { id: toastId });
+      toast.error("Plan execution stopped before all actions were saved.", { id: toastId });
     } finally {
       setIsProcessing(false);
     }
   };
 
   const suggestions = [
-    "What is urgent this week?",
     "I need to track a reimbursement for my dental visit for $250.",
     "Schedule a checkup with Dr. Smith for next Friday at 10am.",
+    "Create tasks for filing our school enrollment paperwork before May 1.",
     "Remind me to follow up on the insurance claim in 3 days."
   ];
 
@@ -178,7 +187,7 @@ export const AskSeraPage: React.FC = () => {
             <div>
               <h2 className="text-3xl font-display font-bold text-zinc-900 mb-3">How can I help you today?</h2>
               <p className="text-zinc-500 max-w-sm mx-auto">
-                Ask me to organize a complex claim, schedule a follow-up, or summarize your household's upcoming week. I'm here to offload the mental burden of life's administration.
+                Ask me to turn a life-admin request into concrete tasks, cases, appointments, and reminders you can save to your household workspace.
               </p>
             </div>
             <div className="w-full max-w-md space-y-6">
@@ -309,12 +318,9 @@ export const AskSeraPage: React.FC = () => {
       {/* Input Bar */}
       <div className="pt-8">
         <div className="bg-white border border-zinc-200 rounded-[2.5rem] shadow-2xl shadow-zinc-200 p-2 flex items-center gap-2 focus-within:ring-4 focus-within:ring-zinc-900/5 transition-all">
-          <button className="p-3 text-zinc-400 hover:text-zinc-900 transition-colors">
-            <Plus size={24} />
-          </button>
           <input 
             type="text" 
-            placeholder="Ask Sera anything..." 
+            placeholder="Describe what you need Sera to organize..." 
             className="flex-1 bg-transparent border-none focus:ring-0 text-base py-3 px-2"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -324,6 +330,7 @@ export const AskSeraPage: React.FC = () => {
           <button 
             onClick={() => handleSend()}
             disabled={!message.trim() || isProcessing}
+            aria-label="Send request"
             className="bg-zinc-900 text-white p-3 rounded-2xl hover:bg-zinc-800 disabled:opacity-50 disabled:pointer-events-none transition-all"
           >
             <Send size={20} />
